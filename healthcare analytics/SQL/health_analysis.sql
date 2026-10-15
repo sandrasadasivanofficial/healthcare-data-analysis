@@ -457,3 +457,261 @@ from healthcare_dataset
 group by `Insurance Provider`
 order by average_age desc
 limit 1;
+
+USE healthcare_analysis;
+
+
+CREATE TABLE doctors (
+    Doctor_ID INT,
+    Doctor_Name VARCHAR(100)
+);
+
+INSERT INTO doctors (Doctor_ID, Doctor_Name)
+SELECT DISTINCT
+    ROW_NUMBER() OVER (ORDER BY Doctor),
+    Doctor
+FROM healthcare_dataset
+WHERE Doctor IS NOT NULL;
+
+select * from doctors;
+
+-- Display doctor names and their IDs.
+SELECT DISTINCT h.Doctor, d.Doctor_ID
+FROM healthcare_dataset h
+INNER JOIN doctors d
+ON h.Doctor = d.Doctor_Name;
+
+-- Display all patients with their matching doctor IDs.
+SELECT h.Name, h.Doctor, d.Doctor_ID
+FROM healthcare_dataset h
+LEFT JOIN doctors d
+ON h.Doctor = d.Doctor_Name;
+
+-- Display all doctors and their patient names.
+SELECT d.Doctor_ID, d.Doctor_Name, h.Name
+FROM healthcare_dataset h
+RIGHT JOIN doctors d
+ON h.Doctor = d.Doctor_Name;
+
+-- Display all patients and all doctors, including unmatched records.
+SELECT h.Name, h.Doctor, d.Doctor_ID, d.Doctor_Name
+FROM healthcare_dataset h
+LEFT JOIN doctors d
+ON h.Doctor = d.Doctor_Name
+UNION
+SELECT h.Name, h.Doctor, d.Doctor_ID, d.Doctor_Name
+FROM healthcare_dataset h
+RIGHT JOIN doctors d
+ON h.Doctor = d.Doctor_Name;
+
+-- Count patient records for each doctor.
+SELECT d.Doctor_Name, COUNT(h.Name) AS Patient_Count
+FROM doctors d
+INNER JOIN healthcare_dataset h
+ON d.Doctor_Name = h.Doctor
+GROUP BY d.Doctor_Name
+ORDER BY Patient_Count DESC;
+
+
+-- Display doctors who treated patients with Diabetes.
+SELECT DISTINCT d.Doctor_Name, h.`Medical Condition`
+FROM doctors d
+INNER JOIN healthcare_dataset h
+ON d.Doctor_Name = h.Doctor
+WHERE h.`Medical Condition` = 'Diabetes';
+
+-- Find doctors who have no matching patient records.
+SELECT d.Doctor_ID, d.Doctor_Name
+FROM doctors d
+LEFT JOIN healthcare_dataset h
+ON d.Doctor_Name = h.Doctor
+WHERE h.Doctor IS NULL;
+
+-- Calculate the average billing amount for each doctor.
+SELECT d.Doctor_Name, AVG(h.`Billing Amount`) AS Average_Billing
+FROM doctors d
+INNER JOIN healthcare_dataset h
+ON d.Doctor_Name = h.Doctor
+GROUP BY d.Doctor_Name
+ORDER BY Average_Billing DESC;
+
+
+-- Find patients whose billing amount is above average.
+SELECT Name, `Billing Amount`
+FROM healthcare_dataset
+WHERE `Billing Amount` > (
+    SELECT AVG(`Billing Amount`)
+    FROM healthcare_dataset
+);
+
+-- Find patients older than the average patient age.
+SELECT Name, Age
+FROM healthcare_dataset
+WHERE Age > (
+    SELECT AVG(Age)
+    FROM healthcare_dataset
+);
+
+-- Find the patient with the highest billing amount.
+SELECT Name, `Billing Amount`
+FROM healthcare_dataset
+WHERE `Billing Amount` = (
+    SELECT MAX(`Billing Amount`)
+    FROM healthcare_dataset
+);
+
+-- Find patients admitted for the most common medical condition.
+SELECT Name, `Medical Condition`
+FROM healthcare_dataset
+WHERE `Medical Condition` = (
+    SELECT `Medical Condition`
+    FROM healthcare_dataset
+    GROUP BY `Medical Condition`
+    ORDER BY COUNT(*) DESC
+    LIMIT 1
+);
+
+
+-- Find doctors who treated more patients than the average number of patients per doctor.
+SELECT Doctor, COUNT(*) AS Patient_Count
+FROM healthcare_dataset
+GROUP BY Doctor
+HAVING COUNT(*) > (
+    SELECT AVG(patient_count)
+    FROM (
+        SELECT COUNT(*) AS patient_count
+        FROM healthcare_dataset
+        GROUP BY Doctor
+    ) AS doctor_counts
+);
+
+-- Categorize patients by age.
+SELECT Name, Age,
+CASE
+    WHEN Age < 18 THEN 'Young'
+    WHEN Age BETWEEN 18 AND 40 THEN 'Adult'
+    WHEN Age BETWEEN 41 AND 60 THEN 'Middle-Aged'
+    ELSE 'Senior'
+END AS Age_Group
+FROM healthcare_dataset;
+
+
+-- Categorize billing amounts.
+SELECT Name, `Billing Amount`,
+CASE
+    WHEN `Billing Amount` < 10000 THEN 'Low Billing'
+    WHEN `Billing Amount` BETWEEN 10000 AND 30000 THEN 'Medium Billing'
+    ELSE 'High Billing'
+END AS Billing_Category
+FROM healthcare_dataset;
+
+
+-- Categorize patient stays based on admission type.
+SELECT Name, `Admission Type`,
+CASE
+    WHEN `Admission Type` = 'Emergency' THEN 'Urgent'
+    WHEN `Admission Type` = 'Urgent' THEN 'Urgent'
+    ELSE 'Non-Urgent'
+END AS Admission_Category
+FROM healthcare_dataset;
+
+
+-- Count patients in each age group.
+SELECT
+CASE
+    WHEN Age < 18 THEN 'Young'
+    WHEN Age BETWEEN 18 AND 40 THEN 'Adult'
+    WHEN Age BETWEEN 41 AND 60 THEN 'Middle-Aged'
+    ELSE 'Senior'
+END AS Age_Group,
+COUNT(*) AS Patient_Count
+FROM healthcare_dataset
+GROUP BY Age_Group
+ORDER BY Patient_Count DESC;
+
+
+-- Count patients in each billing category.
+SELECT
+CASE
+    WHEN `Billing Amount` < 10000 THEN 'Low Billing'
+    WHEN `Billing Amount` BETWEEN 10000 AND 30000 THEN 'Medium Billing'
+    ELSE 'High Billing'
+END AS Billing_Category,
+COUNT(*) AS Patient_Count
+FROM healthcare_dataset
+GROUP BY Billing_Category;
+
+
+-- Calculate average billing by admission category.
+SELECT
+CASE
+    WHEN `Admission Type` IN ('Emergency', 'Urgent') THEN 'Urgent'
+    ELSE 'Non-Urgent'
+END AS Admission_Category,
+AVG(`Billing Amount`) AS Average_Billing
+FROM healthcare_dataset
+GROUP BY Admission_Category;
+
+-- Display patient names in uppercase.
+SELECT UPPER(Name) AS Patient_Name
+FROM healthcare_dataset;
+
+-- Display patient names in lowercase.
+SELECT LOWER(Name) AS Patient_Name
+FROM healthcare_dataset;
+
+-- Find the length of each patient name.
+SELECT Name, LENGTH(Name) AS Name_Length
+FROM healthcare_dataset;
+
+-- Display the first five characters of each patient name.
+SELECT Name, SUBSTRING(Name, 1, 5) AS Short_Name
+FROM healthcare_dataset;
+
+-- Remove extra spaces from patient names.
+SELECT TRIM(Name) AS Patient_Name
+FROM healthcare_dataset;
+
+
+-- Find patients whose names start with 'A'.
+SELECT Name
+FROM healthcare_dataset
+WHERE Name LIKE 'A%';
+
+
+-- Find patients whose names end with 'n'.
+SELECT Name
+FROM healthcare_dataset
+WHERE Name LIKE '%n';
+
+-- Combine patient name and medical condition into one column.
+SELECT CONCAT(Name, ' - ', `Medical Condition`) AS Patient_Details
+FROM healthcare_dataset;
+
+-- Replace spaces in patient names with underscores.
+SELECT Name, REPLACE(Name, ' ', '_') AS Formatted_Name
+FROM healthcare_dataset;
+
+-- Rank patients by billing amount.
+SELECT Name, `Billing Amount`,
+RANK() OVER (ORDER BY `Billing Amount` DESC) AS Billing_Rank
+FROM healthcare_dataset;
+
+-- Create a view showing patient details.
+CREATE VIEW patient_details AS
+SELECT Name, Age, Gender, Doctor, Hospital
+FROM healthcare_dataset;
+
+-- Display all records from the view.
+SELECT * FROM patient_details;
+
+-- Create a view showing patients with high billing amounts.
+CREATE VIEW high_billing_patients AS
+SELECT Name, Age, `Billing Amount`, Hospital
+FROM healthcare_dataset
+WHERE `Billing Amount` > 30000;
+
+-- Display high-billing patients.
+SELECT * FROM high_billing_patients;
+
+
