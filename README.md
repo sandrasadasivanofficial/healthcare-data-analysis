@@ -34,13 +34,13 @@ The dataset contains information about patient age, gender, blood type, medical 
 healthcare-data-analysis/
 │
 ├── EDA/
-│   └── healthcare_INSIGHTS.ipynb
+│   └── healthcare_visualizations.ipynb
 │
 ├── SQL/
 │   └── healthcare.sql
 │
 ├── PowerBI/
-│   └── healthcare_visualizations.pbix
+│   └── healthcare_INSIGHTS.pbix
 │
 └── README.md
 ```
