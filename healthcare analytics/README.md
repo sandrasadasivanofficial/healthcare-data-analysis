@@ -40,7 +40,7 @@ healthcare-data-analysis/
 │   └── healthcare.sql
 │
 ├── PowerBI/
-│   └── healthcare_visualizations.pbix
+│   └── healthcare_INSIGHTS.pbix
 │
 └── README.md
 ```
